@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Adriano Santos Treina</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #3b82f6;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --purple: #a855f7;
+    --orange: #f97316;
+    --cyan: #06b6d4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; }
+
+  .header { text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #1e3a5f, #1e293b); border-radius: 16px; border: 1px solid var(--border); }
+  .header h1 { font-size: 28px; margin-bottom: 4px; }
+  .header .subtitle { color: var(--muted); font-size: 14px; }
+  .header .badges { display: flex; gap: 8px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+  .badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-blue { background: rgba(59,130,246,0.2); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+  .badge-green { background: rgba(34,197,94,0.2); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+  .badge-purple { background: rgba(168,85,247,0.2); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
+  .badge-orange { background: rgba(249,115,22,0.2); color: #fb923c; border: 1px solid rgba(249,115,22,0.3); }
+
+  .grid { display: grid; gap: 16px; margin-bottom: 20px; }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-1 { grid-template-columns: 1fr; }
+
+  @media (max-width: 900px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .card-header .icon { font-size: 20px; }
+  .card-header h3 { font-size: 14px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .kpi { text-align: center; }
+  .kpi .number { font-size: 36px; font-weight: 700; line-height: 1.1; }
+  .kpi .label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .kpi .change { font-size: 12px; margin-top: 6px; padding: 2px 8px; border-radius: 10px; display: inline-block; }
+  .kpi .change.up { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .kpi .change.neutral { background: rgba(234,179,8,0.15); color: #facc15; }
+  .kpi .change.action { background: rgba(59,130,246,0.15); color: #60a5fa; }
+
+  .platform-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .platform-row:last-child { border-bottom: none; }
+  .platform-row .platform-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .platform-row .platform-name { flex: 1; }
+  .platform-row .platform-name strong { display: block; font-size: 14px; }
+  .platform-row .platform-name span { font-size: 12px; color: var(--muted); }
+  .platform-row .platform-stat { text-align: right; }
+  .platform-row .platform-stat strong { font-size: 16px; }
+  .platform-row .platform-stat span { font-size: 11px; color: var(--muted); display: block; }
+  .priority-max { border-left: 3px solid var(--green); padding-left: 10px; }
+  .priority-high { border-left: 3px solid var(--accent); padding-left: 10px; }
+  .priority-med { border-left: 3px solid var(--yellow); padding-left: 10px; }
+  .priority-low { border-left: 3px solid var(--muted); padding-left: 10px; }
+  .priority-off { border-left: 3px solid var(--red); padding-left: 10px; opacity: 0.5; }
+
+  .competitor { padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.03); margin-bottom: 8px; }
+  .competitor:last-child { margin-bottom: 0; }
+  .competitor h4 { font-size: 15px; margin-bottom: 6px; }
+  .competitor .stars { color: var(--yellow); letter-spacing: 2px; }
+  .competitor .desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .action-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .action-item:last-child { border-bottom: none; }
+  .action-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+  .dot-green { background: var(--green); }
+  .dot-blue { background: var(--accent); }
+  .dot-yellow { background: var(--yellow); }
+  .action-text { font-size: 13px; line-height: 1.4; }
+  .action-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.08); color: var(--muted); margin-left: 4px; }
+
+  .chart-container { position: relative; height: 260px; }
+  .chart-container-sm { position: relative; height: 200px; }
+
+  .section-title { font-size: 18px; font-weight: 600; margin: 24px 0 12px; padding-left: 12px; border-left: 3px solid var(--accent); }
+
+  .funnel { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; }
+  .funnel-step { padding: 10px; text-align: center; border-radius: 8px; font-size: 13px; font-weight: 500; position: relative; }
+  .funnel-arrow { color: var(--muted); font-size: 18px; }
+  .fs1 { width: 100%; background: rgba(59,130,246,0.2); border: 1px solid rgba(59,130,246,0.3); }
+  .fs2 { width: 85%; background: rgba(34,197,94,0.2); border: 1px solid rgba(34,197,94,0.3); }
+  .fs3 { width: 70%; background: rgba(234,179,8,0.2); border: 1px solid rgba(234,179,8,0.3); }
+  .fs4 { width: 55%; background: rgba(168,85,247,0.2); border: 1px solid rgba(168,85,247,0.3); }
+  .fs5 { width: 40%; background: rgba(249,115,22,0.2); border: 1px solid rgba(249,115,22,0.3); }
+
+  .wa-group { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; background: rgba(37,211,102,0.05); border: 1px solid rgba(37,211,102,0.15); }
+  .wa-group .wa-name { flex: 1; font-size: 13px; }
+  .wa-group .wa-members { font-size: 14px; font-weight: 600; color: #25d366; }
+  .wa-group .wa-activity { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+  .wa-hot { background: rgba(239,68,68,0.2); color: #f87171; }
+  .wa-warm { background: rgba(234,179,8,0.2); color: #facc15; }
+  .wa-cool { background: rgba(148,163,184,0.2); color: #94a3b8; }
+
+  .footer { text-align: center; color: var(--muted); font-size: 11px; margin-top: 30px; padding: 16px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Adriano Santos Treina</h1>
+  <div class="subtitle">Dashboard de Presenca Digital — 28/03/2026</div>
+  <div class="badges">
+    <span class="badge badge-blue">MVP Embarcadero</span>
+    <span class="badge badge-green">+20 anos Delphi</span>
+    <span class="badge badge-purple">+500 videoaulas</span>
+    <span class="badge badge-orange">+1000 artigos</span>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="grid grid-4">
+  <div class="card kpi">
+    <div class="number" style="color:#25d366">435</div>
+    <div class="label">Alunos WhatsApp</div>
+    <div class="change neutral">4 grupos de curso</div>
+  </div>
+  <div class="card kpi">
+    <div class="number" style="color:#0088cc">1.131</div>
+    <div class="label">Membros Telegram</div>
+    <div class="change up">Comunidade aberta</div>
+  </div>
+  <div class="card kpi">
+    <div class="number" style="color:#ff0000">500+</div>
+    <div class="label">Videos YouTube</div>
+    <div class="change action">Iniciar Shorts</div>
+  </div>
+  <div class="card kpi">
+    <div class="number" style="color:#0a66c2">2K+</div>
+    <div class="label">Seguidores LinkedIn</div>
+    <div class="change up">4.4x mais que 99Coders</div>
+  </div>
+</div>
+
+<!-- Plataformas + Engajamento WA -->
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">📡</span>
+      <h3>Plataformas — Priorizacao</h3>
+    </div>
+    <div class="platform-row priority-max">
+      <div class="platform-icon" style="background:rgba(255,0,0,0.15)">📺</div>
+      <div class="platform-name"><strong>YouTube</strong><span>@adrianosantostreina</span></div>
+      <div class="platform-stat"><strong>500+</strong><span>videos</span></div>
+    </div>
+    <div class="platform-row priority-max">
+      <div class="platform-icon" style="background:rgba(37,211,102,0.15)">💬</div>
+      <div class="platform-name"><strong>WhatsApp</strong><span>Comunidade + 4 grupos</span></div>
+      <div class="platform-stat"><strong>435</strong><span>alunos</span></div>
+    </div>
+    <div class="platform-row priority-high">
+      <div class="platform-icon" style="background:rgba(0,136,204,0.15)">✈️</div>
+      <div class="platform-name"><strong>Telegram</strong><span>@AdrianoSantosComunidade</span></div>
+      <div class="platform-stat"><strong>1.131</strong><span>membros</span></div>
+    </div>
+    <div class="platform-row priority-high">
+      <div class="platform-icon" style="background:rgba(225,48,108,0.15)">📷</div>
+      <div class="platform-name"><strong>Instagram</strong><span>@adrianosantostreina</span></div>
+      <div class="platform-stat"><strong>Ativo</strong><span>reels + stories</span></div>
+    </div>
+    <div class="platform-row priority-med">
+      <div class="platform-icon" style="background:rgba(10,102,194,0.15)">💼</div>
+      <div class="platform-name"><strong>LinkedIn</strong><span>/in/adrianosantospro</span></div>
+      <div class="platform-stat"><strong>2.000+</strong><span>seguidores</span></div>
+    </div>
+    <div class="platform-row priority-off">
+      <div class="platform-icon" style="background:rgba(88,101,242,0.15)">🎮</div>
+      <div class="platform-name"><strong>Discord</strong><span>Testado — nao funcionou</span></div>
+      <div class="platform-stat"><strong style="color:var(--red)">X</strong><span>descartado</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">💬</span>
+      <h3>WhatsApp — Engajamento Real</h3>
+    </div>
+    <div class="wa-group">
+      <div class="wa-name"><strong>PDV Android</strong></div>
+      <div class="wa-members">90 membros</div>
+      <div class="wa-activity wa-hot">257 msg/dia</div>
+    </div>
+    <div class="wa-group">
+      <div class="wa-name"><strong>iOS com Delphi</strong></div>
+      <div class="wa-members">50 membros</div>
+      <div class="wa-activity wa-hot">52 msg/dia</div>
+    </div>
+    <div class="wa-group">
+      <div class="wa-name"><strong>TMV</strong></div>
+      <div class="wa-members">93 membros</div>
+      <div class="wa-activity wa-warm">4.5 msg/dia</div>
+    </div>
+    <div class="wa-group">
+      <div class="wa-name"><strong>CEM</strong></div>
+      <div class="wa-members">77 membros</div>
+      <div class="wa-activity wa-warm">4 msg/dia</div>
+    </div>
+    <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border)">
+      <div class="card-header" style="margin-bottom:8px">
+        <span class="icon">🌐</span>
+        <h3>Comunidades Delphi (voce participa)</h3>
+      </div>
+      <div class="wa-group">
+        <div class="wa-name"><strong>Delphi Masters</strong></div>
+        <div class="wa-members">1.243</div>
+        <div class="wa-activity wa-cool">referencia</div>
+      </div>
+      <div class="wa-group">
+        <div class="wa-name"><strong>Comunidade DUG</strong></div>
+        <div class="wa-members">326</div>
+        <div class="wa-activity wa-cool">referencia</div>
+      </div>
+      <div class="wa-group">
+        <div class="wa-name"><strong>DUG-RS</strong></div>
+        <div class="wa-members">162</div>
+        <div class="wa-activity wa-cool">referencia</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">📊</span>
+      <h3>Comparativo — Autoridade vs Presenca</h3>
+    </div>
+    <div class="chart-container">
+      <canvas id="radarChart"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">👥</span>
+      <h3>Distribuicao de Audiencia</h3>
+    </div>
+    <div class="chart-container">
+      <canvas id="audienceChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">🎯</span>
+      <h3>Perfil Demografico do Publico</h3>
+    </div>
+    <div class="chart-container">
+      <canvas id="demoChart"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">🔥</span>
+      <h3>Engajamento WhatsApp (msgs/dia)</h3>
+    </div>
+    <div class="chart-container">
+      <canvas id="engagementChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Funil + Concorrentes -->
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">🔽</span>
+      <h3>Funil Estrategico</h3>
+    </div>
+    <div class="funnel">
+      <div class="funnel-step fs1">📺 YouTube + 📷 Instagram + 💼 LinkedIn<br><small style="color:var(--muted)">Descoberta — alcance ilimitado</small></div>
+      <div class="funnel-arrow">▼</div>
+      <div class="funnel-step fs2">💬 WhatsApp Aberto + ✈️ Telegram<br><small style="color:var(--muted)">Comunidade gratuita — ~1.566 membros</small></div>
+      <div class="funnel-arrow">▼</div>
+      <div class="funnel-step fs3">🎓 Conteudo de Valor + Relacionamento<br><small style="color:var(--muted)">Dicas, lives, Q&A, code review</small></div>
+      <div class="funnel-arrow">▼</div>
+      <div class="funnel-step fs4">💰 Programadores Premium — R$597/ano<br><small style="color:var(--muted)">15 cursos + 12 novos/ano + 3 lives/mes</small></div>
+      <div class="funnel-arrow">▼</div>
+      <div class="funnel-step fs5">💬 Grupos WA de Curso (pos-venda)<br><small style="color:var(--muted)">435 alunos em 4 grupos</small></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">⚔️</span>
+      <h3>Analise Competitiva</h3>
+    </div>
+    <div class="competitor">
+      <h4>🏆 Voce — @adrianosantostreina</h4>
+      <div><span class="stars">★★★★★</span> Autoridade</div>
+      <div><span class="stars">★★★☆☆</span> Presenca Digital</div>
+      <div><span class="stars">★☆☆☆☆</span> Conteudo IA</div>
+      <div class="desc">Maior autoridade, menor presenca. Oportunidade: IA + Delphi</div>
+    </div>
+    <div class="competitor">
+      <h4>🔵 99Coders</h4>
+      <div><span class="stars">★★★☆☆</span> Autoridade</div>
+      <div><span class="stars">★★★☆☆</span> Presenca Digital</div>
+      <div><span class="stars">★★★★☆</span> Conteudo IA</div>
+      <div class="desc">Lidera em temas modernos: Gemini, webhooks, cloud</div>
+    </div>
+    <div class="competitor">
+      <h4>🟣 Delphi na Veia</h4>
+      <div><span class="stars">★★☆☆☆</span> Autoridade</div>
+      <div><span class="stars">★★★★★</span> Presenca Digital</div>
+      <div><span class="stars">★★☆☆☆</span> Conteudo IA</div>
+      <div class="desc">Domina comunidade jovem: Discord, TikTok, Podcast</div>
+    </div>
+  </div>
+</div>
+
+<!-- LinkedIn & Instagram -->
+<div class="section-title">LinkedIn & Instagram</div>
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">💼</span>
+      <h3>LinkedIn Comparativo</h3>
+    </div>
+    <div class="competitor" style="border-left:3px solid #3b82f6;padding-left:12px">
+      <h4 style="color:#60a5fa">🏆 Adriano Santos</h4>
+      <div style="font-size:14px"><strong style="color:#60a5fa">2.000+</strong> seguidores</div>
+      <div style="font-size:12px;color:var(--muted)">Perfil Pessoal</div>
+      <div style="font-size:12px;color:var(--muted)">Conteudo: <span style="color:#60a5fa;font-weight:600">Claude AI + Delphi</span></div>
+    </div>
+    <div class="competitor" style="border-left:3px solid #22c55e;padding-left:12px">
+      <h4 style="color:#4ade80">🔵 99Coders</h4>
+      <div style="font-size:14px"><strong style="color:#4ade80">453</strong> seguidores</div>
+      <div style="font-size:12px;color:var(--muted)">Empresa &middot; 1 funcionario</div>
+    </div>
+    <div class="competitor" style="border-left:3px solid #a855f7;padding-left:12px">
+      <h4 style="color:#c084fc">🟣 CodgoX (Delphi na Veia)</h4>
+      <div style="font-size:14px"><strong style="color:#c084fc">2.233</strong> seguidores</div>
+      <div style="font-size:12px;color:var(--muted)">Empresa &middot; 29 funcionarios &middot; Conteudo corporativo</div>
+    </div>
+    <div style="margin-top:12px;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:var(--muted)">
+      <strong style="color:var(--text)">Nota:</strong> Adriano tem <strong style="color:#60a5fa">4.4x</strong> mais seguidores que 99Coders. CodgoX tem conteudo corporativo, nao tecnico.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">📷</span>
+      <h3>Instagram Status</h3>
+    </div>
+    <div style="padding:12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;margin-bottom:12px">
+      <div style="font-size:14px;font-weight:600;color:#f87171;margin-bottom:4px">⚠️ Dados Bloqueados</div>
+      <div style="font-size:12px;color:var(--muted)">Ferramentas bloqueiam scraping do Instagram. Auditoria manual necessaria.</div>
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)">Perfis para auditar:</div>
+      <div style="font-size:12px;color:var(--muted);padding:4px 0">📷 <strong>@adrianosantostreina</strong></div>
+      <div style="font-size:12px;color:var(--muted);padding:4px 0">📷 <strong>@99coders</strong></div>
+      <div style="font-size:12px;color:var(--muted);padding:4px 0">📷 <strong>@delphinaveia</strong></div>
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text)">Ferramentas de auditoria manual:</div>
+      <div style="font-size:12px;padding:4px 0"><a href="https://hypeauditor.com" target="_blank" style="color:#60a5fa;text-decoration:none">🔗 HypeAuditor</a> — analise de engajamento e fake followers</div>
+      <div style="font-size:12px;padding:4px 0"><a href="https://clickanalytic.com" target="_blank" style="color:#60a5fa;text-decoration:none">🔗 Click Analytic</a> — metricas de perfil e demograficos</div>
+    </div>
+    <div style="padding:10px;background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.2);border-radius:8px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:#facc15">5 sinais de fake followers:</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.8">
+        ☐ Ratio seguidores/seguindo desproporcional<br>
+        ☐ Poucos comentarios vs muitos likes<br>
+        ☐ Seguidores sem foto ou com nomes genericos<br>
+        ☐ Picos subitos de seguidores<br>
+        ☐ Engajamento &lt;1% em posts recentes
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ações -->
+<div class="section-title">Plano de Acao</div>
+<div class="grid grid-3">
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">⚡</span>
+      <h3>Quick Wins (esta semana)</h3>
+    </div>
+    <div class="action-item"><div class="action-dot dot-green"></div><div class="action-text">Criar grupo WA aberto na Comunidade <span class="action-tag">1 dia</span></div></div>
+    <div class="action-item"><div class="action-dot dot-green"></div><div class="action-text">CTA do WhatsApp em todos os videos YT <span class="action-tag">1 dia</span></div></div>
+    <div class="action-item"><div class="action-dot dot-green"></div><div class="action-text">Gravar 3 Shorts recortando videos <span class="action-tag">2 dias</span></div></div>
+    <div class="action-item"><div class="action-dot dot-green"></div><div class="action-text">Template padrao de thumbnail <span class="action-tag">1 dia</span></div></div>
+    <div class="action-item"><div class="action-dot dot-green"></div><div class="action-text">1 artigo LinkedIn: IA + Delphi <span class="action-tag">1 dia</span></div></div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">📅</span>
+      <h3>Medio Prazo (abril)</h3>
+    </div>
+    <div class="action-item"><div class="action-dot dot-blue"></div><div class="action-text">Tutorial "Delphi + OpenAI API" <span class="action-tag">sem 1</span></div></div>
+    <div class="action-item"><div class="action-dot dot-blue"></div><div class="action-text">Tutorial "Delphi + Gemini" <span class="action-tag">sem 3</span></div></div>
+    <div class="action-item"><div class="action-dot dot-blue"></div><div class="action-text">Live "IA para Devs Delphi" <span class="action-tag">sem 2</span></div></div>
+    <div class="action-item"><div class="action-dot dot-blue"></div><div class="action-text">3 Shorts/semana (continuo) <span class="action-tag">mensal</span></div></div>
+    <div class="action-item"><div class="action-dot dot-blue"></div><div class="action-text">Contatar 99Coders + Delphi na Veia <span class="action-tag">sem 2-3</span></div></div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="icon">🚀</span>
+      <h3>Longo Prazo (mai-jun)</h3>
+    </div>
+    <div class="action-item"><div class="action-dot dot-yellow"></div><div class="action-text">Serie "Historias do Delphi" <span class="action-tag">1x/mes</span></div></div>
+    <div class="action-item"><div class="action-dot dot-yellow"></div><div class="action-text">Code Review ao Vivo <span class="action-tag">2x/mes</span></div></div>
+    <div class="action-item"><div class="action-dot dot-yellow"></div><div class="action-text">500 membros WA aberto <span class="action-tag">meta 90d</span></div></div>
+    <div class="action-item"><div class="action-dot dot-yellow"></div><div class="action-text">2.000 membros Telegram <span class="action-tag">meta 90d</span></div></div>
+    <div class="action-item"><div class="action-dot dot-yellow"></div><div class="action-text">Curso "IA + Delphi" no Premium <span class="action-tag">mes 3</span></div></div>
+  </div>
+</div>
+
+<!-- KPIs Metas -->
+<div class="section-title">Metas & KPIs</div>
+<div class="grid grid-4">
+  <div class="card kpi">
+    <div class="number" style="color:var(--green);font-size:28px">0 → 500</div>
+    <div class="label">Membros WA Aberto</div>
+    <div class="change action">90 dias</div>
+  </div>
+  <div class="card kpi">
+    <div class="number" style="color:var(--cyan);font-size:28px">1.131 → 2K</div>
+    <div class="label">Membros Telegram</div>
+    <div class="change action">90 dias</div>
+  </div>
+  <div class="card kpi">
+    <div class="number" style="color:var(--red);font-size:28px">0 → 36</div>
+    <div class="label">Shorts Publicados</div>
+    <div class="change action">90 dias</div>
+  </div>
+  <div class="card kpi">
+    <div class="number" style="color:var(--purple);font-size:28px">0 → 8</div>
+    <div class="label">Videos IA+Delphi</div>
+    <div class="change action">90 dias</div>
+  </div>
+</div>
+
+<div class="footer">
+  Dashboard gerado por ExpxAgents — YouTube Competitor Analyzer v4.0 | 28/03/2026<br>
+  Dados de engajamento coletados via Evolution API | LinkedIn dados publicos
+</div>
+
+<script>
+// Radar Chart — Comparativo
+new Chart(document.getElementById('radarChart'), {
+  type: 'radar',
+  data: {
+    labels: ['Autoridade', 'Presenca Digital', 'Conteudo IA', 'Comunidade', 'Cursos', 'Modelo Negocio', 'LinkedIn'],
+    datasets: [
+      {
+        label: 'Adriano Santos',
+        data: [5, 3, 1, 3, 5, 5, 4],
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,0.15)',
+        pointBackgroundColor: '#3b82f6',
+        borderWidth: 2
+      },
+      {
+        label: '99Coders',
+        data: [3, 3, 4, 2, 2, 3, 1],
+        borderColor: '#22c55e',
+        backgroundColor: 'rgba(34,197,94,0.1)',
+        pointBackgroundColor: '#22c55e',
+        borderWidth: 2
+      },
+      {
+        label: 'Delphi na Veia',
+        data: [2, 5, 2, 5, 2, 2, 3],
+        borderColor: '#a855f7',
+        backgroundColor: 'rgba(168,85,247,0.1)',
+        pointBackgroundColor: '#a855f7',
+        borderWidth: 2
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      r: {
+        beginAtZero: true,
+        max: 5,
+        ticks: { display: false },
+        grid: { color: 'rgba(255,255,255,0.08)' },
+        pointLabels: { color: '#94a3b8', font: { size: 11 } }
+      }
+    },
+    plugins: {
+      legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 12, padding: 15 } }
+    }
+  }
+});
+
+// Audience Distribution
+new Chart(document.getElementById('audienceChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['WhatsApp Cursos (435)', 'Telegram (1.131)', 'Delphi Masters WA (1.243)', 'DUG Total (583)', 'POS News (774)'],
+    datasets: [{
+      data: [435, 1131, 1243, 583, 774],
+      backgroundColor: ['#25d366', '#0088cc', '#3b82f6', '#a855f7', '#f97316'],
+      borderColor: 'transparent',
+      borderWidth: 0
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '55%',
+    plugins: {
+      legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 12, padding: 10, font: { size: 11 } } }
+    }
+  }
+});
+
+// Demographics
+new Chart(document.getElementById('demoChart'), {
+  type: 'bar',
+  data: {
+    labels: ['18-24', '25-34', '35-44', '45-54', '55+'],
+    datasets: [
+      {
+        label: 'Seu Publico (estimado)',
+        data: [2, 10, 40, 35, 13],
+        backgroundColor: 'rgba(59,130,246,0.7)',
+        borderRadius: 4
+      },
+      {
+        label: 'WhatsApp BR',
+        data: [19, 29, 24, 17, 11],
+        backgroundColor: 'rgba(37,211,102,0.5)',
+        borderRadius: 4
+      },
+      {
+        label: 'Discord',
+        data: [44, 28, 14, 7, 7],
+        backgroundColor: 'rgba(88,101,242,0.4)',
+        borderRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+      y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', callback: v => v + '%' } }
+    },
+    plugins: {
+      legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 12, padding: 15 } }
+    }
+  }
+});
+
+// WhatsApp Engagement
+new Chart(document.getElementById('engagementChart'), {
+  type: 'bar',
+  data: {
+    labels: ['PDV Android', 'iOS Delphi', 'TMV', 'CEM'],
+    datasets: [{
+      label: 'Mensagens/dia',
+      data: [257, 52, 4.5, 4],
+      backgroundColor: ['#ef4444', '#f97316', '#eab308', '#eab308'],
+      borderRadius: 6
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y',
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+      y: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 13 } } }
+    },
+    plugins: {
+      legend: { display: false }
+    }
+  }
+});
+</script>
+</body>
+</html>
